@@ -1,0 +1,50 @@
+services:
+  # MySQL управляется не через docker-compose
+
+  # инфраструктура
+  redis:
+    image: redis/redis-stack-server:latest
+    command:
+      - /bin/sh
+      - -c
+      - redis-server --requirepass "$${REDIS_PASSWORD:?REDIS_PASSWORD variable is not set}" --loadmodule /opt/redis-stack/lib/rejson.so --save 60 0 --dir /data
+    restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "6380:6379"
+    volumes:
+      - ./redis_data:/data
+
+  # Discord бот
+  discord-bot:
+    extends:
+      file: DiscordBot/docker-compose.yaml
+      service: discord-bot
+    depends_on:
+      - redis
+      - discord-bot-celery
+
+  discord-bot-celery:
+    extends:
+      file: DiscordBot/docker-compose.yaml
+      service: celery
+    depends_on:
+      - redis
+
+  # Player Data Service
+  player-data-service:
+    extends:
+      file: PlayerDataService/docker-compose.yaml
+      service: app
+    depends_on:
+      - redis
+
+  # Payment Service
+  payment-service:
+    extends:
+      file: PaymentService/docker-compose.yaml
+      service: app
+    depends_on:
+      - redis
+  
