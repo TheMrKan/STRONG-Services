@@ -1,0 +1,11 @@
+fastapi
+requests
+pydantic
+starlette
+prettytable~=3.4.1
+uvicorn
+aiohttp
+aiomysql
+AaioAsync
+cryptography
+python-multipart

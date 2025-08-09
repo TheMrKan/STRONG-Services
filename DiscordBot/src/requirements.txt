@@ -1,0 +1,6 @@
+discord.py~=2.4.0
+python-a2s~=1.4.1
+redis
+bestconfig
+mysql-connector-python
+celery

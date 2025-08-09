@@ -1,0 +1,52 @@
+owners:
+  - 402433601129545731
+
+logging:
+  version: 1
+  formatters:
+    console:
+      format: "[%(asctime)s] [%(name)s] [%(levelname)s]: %(message)s"
+
+  handlers:
+    console:
+      class: logging.StreamHandler
+      stream: ext://sys.stdout
+      formatter: console
+      level: DEBUG
+
+  loggers:
+    root:
+      handlers: [console]
+      level: DEBUG
+      propogate: no
+    a2s:
+      handlers: [console]
+      level: ERROR
+      propogate: no
+
+
+server_info:
+  server: !!python/tuple ["37.230.137.54", 27024]
+  channel: 695666841141641228
+  interval: 60
+
+permission_groups:
+  categories:
+    - name: vip
+      channel_id: 1231199978781937706
+      message_id: 1329577102613282848
+      title: VIP groups
+      color: "#000000"
+      show_group_id: false
+      groups:
+        - vip
+    - name: Freedom
+      channel_id: 1231199978781937706
+      message_id: 1357761622625620088
+      title: Freedom groups
+      color: "#000000"
+      show_group_id: false
+      groups:
+        - freedom1
+        - freedom2
+        - freedom3

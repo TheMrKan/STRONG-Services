@@ -1,0 +1,39 @@
+
+services:
+  discord-bot:
+    build: ./src
+    env_file: .env
+    command: python3 -m src.main
+    restart: unless-stopped
+    volumes:
+      - ./src:/app/src
+      - ./config.yaml:/app/config.yaml
+      
+    depends_on:
+      - redis
+      - celery
+
+  celery:
+    build: ./src
+    env_file: .env
+    command: celery -A src.celery_entrypoint worker -B --concurrency=2
+    restart: unless-stopped
+    volumes:
+      - ./src:/app/src
+      - ./config.yaml:/app/config.yaml
+    depends_on:
+      - redis
+
+  redis:
+    image: redis/redis-stack-server:latest
+    command:
+      - /bin/sh
+      - -c
+      - redis-server --requirepass "$${REDIS_PASSWORD:?REDIS_PASSWORD variable is not set}" --loadmodule /opt/redis-stack/lib/rejson.so --save 60 0 --dir /data
+    restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "6380:6379"
+    volumes:
+      - ./redis_data:/data
