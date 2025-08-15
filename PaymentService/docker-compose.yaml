@@ -4,4 +4,7 @@ services:
     volumes:
       - .:/app
     restart: unless-stopped
+    ports:
+      - "8001:80"
+
     

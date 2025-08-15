@@ -26,6 +26,10 @@ from apis import enot, nicepay, pally
 
 # настройка логгера до импорта других частей проекта, чтобы в них корректно работал logging.getLogger
 logger = logging.getLogger("payment_api_logger")
+
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+
 logger.setLevel(logging.DEBUG)
 if not cfg.DEBUG:
     fh = logging.FileHandler(f'logs/log_{datetime.datetime.now().strftime("%m-%d-%Y-%H-%M-%S")}.log')
