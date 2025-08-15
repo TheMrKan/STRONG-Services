@@ -43,6 +43,6 @@ async def exception_handler(request: Request, exc: Exception):
 
 
 @app.get("/query/")
-async def query_players_data(players: Annotated[list[int], Query()], fields: Annotated[list[str], Query()]) -> dict[int, dict[str, str | None]]:
+async def query_players_data(players: Annotated[list[int], Query()], fields: Annotated[list[str], Query()]) -> dict[str, dict[str, str | None]]:
     data = await provider.query_async(players, fields)
-    return data
+    return {str(player_id): player_data for player_id, player_data in data.items()}    # ключи в JSON объектах должны быть строками

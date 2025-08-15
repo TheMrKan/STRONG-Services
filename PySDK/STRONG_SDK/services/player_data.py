@@ -21,8 +21,8 @@ class PlayerDataService:
     async def query_async(self, players: list[int], fields: list[__FIELD_NAME]) -> dict[int, dict[str, str | None]]:
         """
         Запрос данных игроков.
-        :param players: Список идентификаторов игроков.
-        :param fields: Список полей, которые нужно запросить.
+        :param players: Список SteamID64 игроков.
+        :param fields: Список полей, которые нужно запросить. См. константы в PlayerDataService.
         :return: Словарь, где ключ - идентификатор игрока, значение - словарь с полями и их значениями.
         """
 
@@ -38,6 +38,11 @@ class PlayerDataService:
                 response.raise_for_status()
                 return response.json()
             except httpx.TimeoutException:
-                raise PlayerDataServiceError("Timeout")
+                raise PlayerDataServiceError("Request timeout")
+            except httpx.HTTPStatusError as e:
+                json = response.json()
+                raise PlayerDataServiceError(f"Code: {json['code']}. Detail: {json['detail']}")
+            except httpx.HTTPError as e:
+                raise PlayerDataServiceError(f"Unexpected HTTP error: {e} {response.text}")
             except Exception as e:
-                raise PlayerDataServiceError(f"Unexpected error: {e} {response.text}")
+                raise PlayerDataServiceError(f"Unhandled SDK error: {e}")
