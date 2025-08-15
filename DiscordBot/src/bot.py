@@ -15,23 +15,11 @@ bot_exception : Exception | None = None
 
 
 class MyBot(Bot):
-    if TYPE_CHECKING:
-        from src.players import PlayersCog
-
-    players: "PlayersCog | None" = None
-
+    
     async def on_ready(self):
         from src.server_info import ServerInfoCog
         from src.permission_groups.cog import PermissionGroupsCog
         from src.dev import DevCog
-        from src.players import PlayersCog
-
-        try:
-            self.players = PlayersCog(self)
-            await self.add_cog(self.players)
-        except Exception as e:
-            self.players = None
-            logger.exception("Failed to load players cog", exc_info=e)
 
         info_cog = self.add_cog(ServerInfoCog(self))
         permissions_cog = self.add_cog(PermissionGroupsCog(self))

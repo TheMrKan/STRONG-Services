@@ -11,10 +11,12 @@ import datetime
 import redis.asyncio as redislib
 import traceback
 import hashlib
+import httpx
 
 
 from src import globals, config, bot
 from . import groups_data_manager
+from STRONG_SDK.services.player_data import PlayerDataService
 
 
 INTERNAL_STATE_STORAGE_PREFIX = groups_data_manager.REDIS_PREFIX + "internal:"
@@ -27,7 +29,14 @@ RETRY_INTERVAL = 10
 async def should_be_updated_async(category_name: str):
     category_config = __get_category_config(category_name)
     groups_data = await __get_groups_data_async(category_config.groups)
-    hash = __get_hash(groups_data, {})
+    try:
+        player_names = await __get_player_names_async([m for g in groups_data for m in g.members])
+    except Exception:
+        print(f"Failed to fetch player names:")
+        traceback.print_exc()
+        player_names = {}
+
+    hash = __get_hash(groups_data, player_names)
     remote_hash = await __fetch_category_state_partial_async(category_name, "current_remote_hash", None)
     return hash != remote_hash
 
@@ -202,13 +211,20 @@ async def __update_category_async(category_name: str):
 
         category_config = __get_category_config(category_name)
         groups_data = await __get_groups_data_async(category_config.groups)
-        embed = __build_category_message(category_config, groups_data, {})
+        try:
+            player_names = await __get_player_names_async([m for g in groups_data for m in g.members])
+        except Exception:
+            print(f"Failed to fetch player names:")
+            traceback.print_exc()
+            player_names = {}
+
+        embed = __build_category_message(category_config, groups_data, player_names)
 
         print("Editing message...")
         await __edit_message_async(category_config.channel_id, category_config.message_id, embed)
 
         print("Saving result...")
-        hash = __get_hash(groups_data, {})
+        hash = __get_hash(groups_data, player_names)
         await __update_category_state_partial_async(category_name, "current_remote_hash", hash)
         await __update_category_state_partial_async(category_name, "deadline", None)
         await __update_category_state_partial_async(category_name, "status", TaskStatus.NOT_PLANNED.value)
@@ -234,7 +250,7 @@ def __get_category_config(category_name: str) -> config.PermissionCategoryProtoc
     return search[0]
 
 
-async def __get_groups_data_async(groups: list[str]):
+async def __get_groups_data_async(groups: list[str]) -> list[groups_data_manager.GroupData]:
     raw_data = await asyncio.gather(*[groups_data_manager.fetch_group_async(g) for g in groups])
     result = []
     for i in range(len(raw_data)):
@@ -246,10 +262,10 @@ async def __get_groups_data_async(groups: list[str]):
     return result
 
 
-def __get_hash(data: list[groups_data_manager.GroupData], player_names: dict[int, str]) -> int:
+def __get_hash(data: list[groups_data_manager.GroupData], player_names: dict[str, str]) -> int:
     groups = []
     for g in data:
-        members = "".join([f"{m}{(player_names.get(int(m), '') if m.isdigit() else '')}" for m in g.members])
+        members = "".join([f"{m}{player_names.get(m, '')}" for m in g.members])
         groups.append(f"{g.id}{g.prefix}{members}")
     return int(hashlib.sha1("".join(groups).encode("utf-8")).hexdigest(), 16) % (10**16)
 
@@ -259,17 +275,22 @@ async def __edit_message_async(channel_id: int, message_id: int, embed: discord.
     if channel:
         message = await channel.fetch_message(message_id)
         await message.edit(content="", embed=embed)
-        await asyncio.sleep(120)
-        raise Exception()
         # TODO: лог
     else:
         raise Exception(f"Channel {channel_id} not found")
 
 
+async def __get_player_names_async(players: list[str]) -> dict[str, str]:
+    if not any(players):
+        return {}
+    query_result = await PlayerDataService().query_async(players, [PlayerDataService.DISPLAY_NAME])
+    return {str(player_id): player_data[PlayerDataService.DISPLAY_NAME] for player_id, player_data in query_result.items()}
+
+
 def __build_category_message(
     category: config.PermissionCategoryProtocol,
     category_groups: list[groups_data_manager.GroupData],
-    player_names: dict[int, str],
+    player_names: dict[str, str],
 ):
     color = dscolor.parse_hex_number(category.color.strip("#"))
     embed = discord.Embed(
@@ -280,9 +301,7 @@ def __build_category_message(
     for group in category_groups:
         members_list = []
         for i, member in enumerate(group.members):
-            name = (
-                player_names.get(int(member), "UNKNOWN") if member.isdigit() else member
-            )
+            name = player_names.get(member, "UNKNOWN")
             members_list.append(f"  {i+1}. {member} - {name}")
 
         if category.show_group_id:

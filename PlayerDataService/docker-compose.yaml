@@ -1,0 +1,10 @@
+services:
+  app:
+    build:
+      context: .
+      additional_contexts:
+        sdk: ../PySDK
+    volumes:
+      - .:/app
+      - ../PySDK:/PySDK
+    restart: unless-stopped

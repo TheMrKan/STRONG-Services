@@ -9,6 +9,7 @@ class ConfigFileProtocol(Protocol):
     db_dbname: str
     db_user: str
     db_password: str
+    redis_url: str
 
 
 
@@ -18,11 +19,12 @@ class ConfigFileInherited(ConfigFileProtocol, ConfigProvider):
 
 
 # пробует также получить ключ в верхнем регистре, чтобы по .db_host можно было получить переменную окружения .DB_HOST
+__original_get = ConfigProvider.get
 def __patch(self: ConfigProvider, item: str, *args, **kwargs):
     try:
-        return self.get(item, *args, **kwargs)
+        return __original_get(self, item, *args, **kwargs)
     except KeyError:
-        return self.get(item.upper(), *args, **kwargs)
+        return __original_get(self, item.upper(), *args, **kwargs)
 
 ConfigProvider.get = __patch
 

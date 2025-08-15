@@ -18,11 +18,15 @@ logging:
     root:
       handlers: [console]
       level: DEBUG
-      propogate: no
+      propagate: no
     a2s:
       handlers: [console]
       level: ERROR
-      propogate: no
+      propagate: no
+    httpcore:
+      handlers: [console]
+      level: ERROR
+      propagate: no
 
 
 server_info:

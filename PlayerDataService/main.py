@@ -3,11 +3,22 @@ from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from dataclasses import dataclass
+from contextlib import asynccontextmanager
 
-from . import data_query_provider
+import data_query_provider
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global provider
+
+    provider = data_query_provider.DataQueryProvider()
+    await provider.init_async()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+provider: data_query_provider.DataQueryProvider
 
 
 class APIException(Exception):
@@ -28,18 +39,10 @@ async def exception_handler(request: Request, exc: Exception):
     else:
         code = 500
         detail = f"Unhandled internal error: {str(exc)}"
-    return JSONResponse({"code": code, "detail": detail})
+    return JSONResponse({"code": code, "detail": detail}, status_code=code)
 
 
-class PlayerDataQueryRequest(BaseModel):
-    players: list[int]
-    fields: list[str]
-
-
-class PlayerDataQueryResponse(BaseModel):
-    pass
-
-
-@app.get("/query")
-async def query_players_data(query: Annotated[PlayerDataQueryRequest, Query]) -> PlayerDataQueryResponse:
-    raise NotImplementedError
+@app.get("/query/")
+async def query_players_data(players: Annotated[list[int], Query()], fields: Annotated[list[str], Query()]) -> dict[int, dict[str, str | None]]:
+    data = await provider.query_async(players, fields)
+    return data

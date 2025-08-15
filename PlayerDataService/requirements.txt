@@ -3,3 +3,5 @@ python-dotenv
 bestconfig
 aiomysql
 redis
+uvicorn
+-e /PySDK

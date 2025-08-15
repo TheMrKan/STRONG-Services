@@ -4,3 +4,5 @@ redis
 bestconfig
 mysql-connector-python
 celery
+httpx
+-e /PySDK
