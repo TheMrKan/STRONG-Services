@@ -272,12 +272,17 @@ def __get_hash(data: list[groups_data_manager.GroupData], player_names: dict[str
 
 async def __edit_message_async(channel_id: int, message_id: int, embed: discord.Embed):
     channel: discord.TextChannel = globals.bot.get_channel(channel_id)  # type: ignore
-    if channel:
-        message = await channel.fetch_message(message_id)
-        await message.edit(content="", embed=embed)
-        # TODO: лог
-    else:
-        raise Exception(f"Channel {channel_id} not found")
+    if not channel:
+        channel = await globals.bot.fetch_channel(channel_id)
+        if not channel:
+            raise Exception(f"Channel {channel_id} not found")
+
+    if isinstance(channel, discord.Thread) and channel.archived:
+        await channel.edit(archived=False)  # type: ignore
+
+    message = await channel.fetch_message(message_id)
+    await message.edit(content="", embed=embed)
+    # TODO: лог
 
 
 async def __get_player_names_async(players: list[str]) -> dict[str, str]:
