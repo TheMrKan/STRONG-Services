@@ -22,7 +22,6 @@ from STRONG_SDK.services.player_data import PlayerDataService
 INTERNAL_STATE_STORAGE_PREFIX = groups_data_manager.REDIS_PREFIX + "internal:"
 
 ATTEMPT_TIMEOUT = 30
-PENDING_DURATION = 5
 RETRY_INTERVAL = 10
 
 
@@ -96,7 +95,7 @@ async def request_category_update_async(
         category_state.status = TaskStatus.NOT_PLANNED
 
     if category_state.status == TaskStatus.NOT_PLANNED:
-        delay = None if instant else PENDING_DURATION
+        delay = None if instant else config.instance.permission_groups.update_delay
         category_state.task_id = str(uuid.uuid4())
 
         await __update_category_state_partial_async(

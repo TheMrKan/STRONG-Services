@@ -21,6 +21,7 @@ class PermissionCategoryProtocol(Protocol):
 
 
 class PermissionGroupsProtocol(Protocol):
+    update_delay: int
     categories: list[PermissionCategoryProtocol]
 
 
