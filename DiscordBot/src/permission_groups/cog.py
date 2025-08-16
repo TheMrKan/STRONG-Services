@@ -45,8 +45,9 @@ class PermissionGroupsCog(commands.Cog):
         
     def __get_group_category(self, group: str) -> config.PermissionCategoryProtocol | None:
         for c in config.instance.permission_groups.categories:
-            if c.name == group:
-                return c
+            for candidate in c.groups:
+                if candidate.lower() == group.lower():
+                    return c
         return None
 
     async def update_all_if_needed_async(self, instant: bool):
